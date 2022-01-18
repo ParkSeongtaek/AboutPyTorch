@@ -42,3 +42,29 @@ for t in range(1,501):
         w1.grad.zero_()
         w2.grad.zero_()
 
+'''
+Result 
+
+First Run
+Iteration:  100          LOSS 789.6707153320312
+Iteration:  200          LOSS 6.283302307128906
+Iteration:  300          LOSS 0.07854069769382477
+Iteration:  400          LOSS 0.0014802836813032627
+Iteration:  500          LOSS 0.00013217404193710536
+
+Second Run
+Iteration:  100          LOSS 749.996826171875
+Iteration:  200          LOSS 6.228278160095215
+Iteration:  300          LOSS 0.08298936486244202
+Iteration:  400          LOSS 0.0015978605952113867
+Iteration:  500          LOSS 0.0001309700746787712
+
+Third Run
+Iteration:  100          LOSS 937.6288452148438
+Iteration:  200          LOSS 9.420062065124512
+Iteration:  300          LOSS 0.1388353556394577
+Iteration:  400          LOSS 0.002696493174880743
+Iteration:  500          LOSS 0.0001882780052255839
+
+
+'''

@@ -1,6 +1,6 @@
 '''1. Module Import'''
 import numpy as np                  # numpy는 보통 np로 줄여 부른다 선형 대수 관련 함수 쉽게 하는 모듈 파이썬 코드스크립트에서 가장 자주 사용
-import matplotlib.pyplot as pit     #matplotlib 은 python에서 그래프를 그리는 라이브러리다. 
+import matplotlib.pyplot as plt     #matplotlib 은 python에서 그래프를 그리는 라이브러리다. 
                                     #matplotlib.pyplot은 MATLAB과 비슷하게 명령어를 지정할 수 있다고 한다.
 import torch                        #pyTorch
 import torch.nn as nn               #NEURAL NETWORKS 파이토치의 신경망
@@ -41,7 +41,7 @@ test_loader = torch.utils.data.DataLoader(dataset = train_dataset,
                                            shuffle = False)
 
 
-'''4. 데이터 확인하기'''
+'''4. 데이터 확인하기 (1)'''
 for (X_train, Y_train) in train_loader:
     print('X_train', X_train.size(),'type: ', X_train.type())
     print('Y_train', Y_train.size(),'type: ', Y_train.type())
@@ -49,7 +49,53 @@ for (X_train, Y_train) in train_loader:
 #X_train: torch.size([32,1,28,28]) type: torch.FloatTensor
 #Y_train: torch.size([32]) type: torch.LongTensor
 
+# 32개 이미지데이터가 1개의MINI_Batch를 구성하고 가로 28 새로 28개의 픽셀로 구성돼 있으며 채널이 1이므로 흑백 이미지
+# 32개의 이미지 데이터 각각에 label값이 1개씩 존재하기 떄문에 32개의 값을 갖고 있다는것을 확인할 수 있습니다. 
+
+'''5. 데이터 확인하기 (2)'''
+
+pltsize = 1
+plt.figure(figsize = (10 * pltsize , pltsize))
+for i in range(10):
+    plt.subplot(1,10,i+1)
+    plt.axis('off')
+    plt.imshow(X_train[i,:,:,:].numpy().reshape(28,28)), cmap = "gray_r" )
+    plt.title('Class: '+ str(Y_train[i].item()))
 
 
-#
+'''6. MLP(Multi Layer Perceptron) 모델 설계하기'''
+
+class Net (nn.Module):
+    def __init__(self):
+        super(Net,self).__init__()
+        self.fc1 = nn.Linear(28*28, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 10)
+    def forward(self,x):
+        x = x.view(-1 , 28 * 28)
+        x = self.fc1(x)
+        x = x.view(-1 , 28 * 28)
+        x = F.sigmoid()
+        x = self.fc2(x)
+        x = F.sigmoid()
+        x = self.fc3(x)
+        x = F.log_softmax(x, dim =1)
+        return x
+
+''' 7. Optimizer, Objective Function 설정하기'''
+model = Net().to(DEVICE)
+optimizer = torch.optim.SGD(model.parameters(), lr = 0.01, momentum = 0.5)
+criterion = nn.CrossEntroptyLoss()
+
+print (model)
+
+''' 8. MLP 모델 학습을 진행하며 학습 데이터에 대한 모델 성능을 확인하는 함수 정의'''
+
+def train(model ,train_loader, optimizer, log_interval):
+    model.train()
+    for batch_idx,(image, label) in enumerate(train_loader):
+        image = image.to(DEVICE)
+        label = label.to(DEVICE)
+
+
 

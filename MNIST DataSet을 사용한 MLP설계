@@ -74,7 +74,6 @@ class Net (nn.Module):
     def forward(self,x):
         x = x.view(-1 , 28 * 28)
         x = self.fc1(x)
-        x = x.view(-1 , 28 * 28)
         x = F.sigmoid()
         x = self.fc2(x)
         x = F.sigmoid()
@@ -97,5 +96,41 @@ def train(model ,train_loader, optimizer, log_interval):
         image = image.to(DEVICE)
         label = label.to(DEVICE)
 
+        optimizer.zero_grad()
+        output = model(image)
+        loss = criterion(output, label)
+        loss.backward
+        optimizer.step()
+        if batch_idx % log_interval == 0:
+            print("Train Epoch: {} [ {}/{} ( {:.0f}% ) ]\t Train Loss: {:.6f} ".format (
+               Epoch, batch_idx * len(image),
+               len(train_loader.dataset), 100. * batch_idx / len (train_loader), 
+               loss.item()))
 
 
+''' 9. 학습되는 과정 속에서 검증 데이터에 대한 모델 성능을 확인하는 함수 정의 '''
+def evaluate(model, test_loader):
+    model.eval()
+    test_loss = 0
+    correct = 0
+
+    with torch.no_grad():
+        for image, label in test_loader:
+            image = image.to(DEVICE)
+            label = label.to(DEVICE)
+            output = model(image)
+            test_loss += criterion(output, label).item()
+            prediction = output.max(1, keepdim = True)[1]
+            correct += prediction.eq(label.view_as(prediction)).sum().item()
+
+    test_loss /= len(test_loader.dataset)
+    test_accuracy = 100. * correct / len(test_loader.dataset)
+    return test_loss,test_accuracy
+
+''' 10. MLP 학습을 실행하며 Train, Test set의 Loss 및 Test set Accuracy확인하기 '''
+for Epoch in range(1,EPOCHS + 1):
+    train(model, train_loader, optimizer , log_interval = 200)
+    test_loss, test_accuracy  = evaluate(model, test_loader)
+    print("\n [EPOCH: ()], \t Test Loss: {:.4f}, \t Test Accuracy: {:.2f} % \n "
+          .format(Epoch,test_loss,test_accuracy) )
+    

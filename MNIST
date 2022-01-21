@@ -1,0 +1,122 @@
+#Sources
+#https://wikidocs.net/60324
+
+#Does the "utf-8" error also occur within annotation? YES
+
+#1. import tools
+import torch
+import torchvision.datasets as dsets
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+import torch.nn as nn
+import matplotlib.pyplot as plt
+import random
+
+#2. Find the available device
+USE_CUDA = torch.cuda.is_available()     
+device = torch.device("cuda" if USE_CUDA else "cpu") 
+print("Use_Device:", device)
+
+#3. for reproducibility
+random.seed(778)
+torch.manual_seed(778)
+if device == 'cuda':
+    torch.cuda.manual_seed_all(778)
+
+
+# hyperparameters
+training_epochs = 15
+batch_size = 100
+
+# MNIST dataset
+mnist_train = dsets.MNIST(root='MNIST_data/',
+                          train=True,
+                          transform=transforms.ToTensor(),
+                          download=True)
+
+mnist_test = dsets.MNIST(root='MNIST_data/',
+                         train=False,
+                         transform=transforms.ToTensor(),
+                         download=True)
+
+
+# dataset loader
+data_loader = DataLoader(dataset=mnist_train,
+                                          batch_size=batch_size, # batch_size 32
+                                          shuffle=True,
+                                          drop_last=True)
+
+# MNIST data image of shape 28 * 28 = 784
+linear = nn.Linear(784, 10, bias=True).to(device)
+
+# Cost function and optimizer definition
+criterion = nn.CrossEntropyLoss().to(device) # It contains a softmax function internally.
+optimizer = torch.optim.SGD(linear.parameters(), lr=0.1)
+
+for epoch in range(training_epochs): # Previously, the value of training_epochs is designated as 15.
+    avg_cost = 0
+    total_batch = len(data_loader)
+
+    for X, Y in data_loader:
+        # Since the batch size is 100, X in the following operation becomes tensors of 100 and 784.
+        X = X.view(-1, 28 * 28).to(device)
+        # Labels are not one-hot coded, but integers from 0 to 9.
+        Y = Y.to(device)
+
+        optimizer.zero_grad()
+        hypothesis = linear(X)
+        cost = criterion(hypothesis, Y)
+        cost.backward()
+        optimizer.step()
+
+        avg_cost += cost / total_batch
+
+    print('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.9f}'.format(avg_cost))
+
+print('Learning finished')
+
+# The model is tested using test data.
+with torch.no_grad(): # If torch.no_grad(), gradient calculation is not performed.
+    X_test = mnist_test.test_data.view(-1, 28 * 28).float().to(device)
+    Y_test = mnist_test.test_labels.to(device)
+
+    prediction = linear(X_test)
+    correct_prediction = torch.argmax(prediction, 1) == Y_test
+    accuracy = correct_prediction.float().mean()
+    print('Accuracy:', accuracy.item())
+
+    # Pick one randomly from the MNIST test data and make a prediction.
+    r = random.randint(0, len(mnist_test) - 1)
+    X_single_data = mnist_test.test_data[r:r + 1].view(-1, 28 * 28).float().to(device)
+    Y_single_data = mnist_test.test_labels[r:r + 1].to(device)
+
+    print('Label: ', Y_single_data.item())
+    single_prediction = linear(X_single_data)
+    print('Prediction: ', torch.argmax(single_prediction, 1).item())
+
+    plt.imshow(mnist_test.test_data[r:r + 1].view(28, 28), cmap='Greys', interpolation='nearest')
+    plt.show()
+
+    # Pick one randomly from the MNIST test data and make a prediction.
+    r = random.randint(0, len(mnist_test) - 1)
+    X_single_data = mnist_test.test_data[r:r + 1].view(-1, 28 * 28).float().to(device)
+    Y_single_data = mnist_test.test_labels[r:r + 1].to(device)
+
+    print('Label: ', Y_single_data.item())
+    single_prediction = linear(X_single_data)
+    print('Prediction: ', torch.argmax(single_prediction, 1).item())
+
+    plt.imshow(mnist_test.test_data[r:r + 1].view(28, 28), cmap='Greys', interpolation='nearest')
+    plt.show()
+# Pick one randomly from the MNIST test data and make a prediction.
+    r = random.randint(0, len(mnist_test) - 1)
+    X_single_data = mnist_test.test_data[r:r + 1].view(-1, 28 * 28).float().to(device)
+    Y_single_data = mnist_test.test_labels[r:r + 1].to(device)
+
+    print('Label: ', Y_single_data.item())
+    single_prediction = linear(X_single_data)
+    print('Prediction: ', torch.argmax(single_prediction, 1).item())
+
+    plt.imshow(mnist_test.test_data[r:r + 1].view(28, 28), cmap='Greys', interpolation='nearest')
+    plt.show()
+

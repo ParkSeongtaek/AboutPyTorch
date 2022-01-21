@@ -1,15 +1,14 @@
 '''1. Module Import'''
-import numpy as np                  # numpy는 보통 np로 줄여 부른다 선형 대수 관련 함수 쉽게 하는 모듈 파이썬 코드스크립트에서 가장 자주 사용
-import matplotlib.pyplot as plt     #matplotlib 은 python에서 그래프를 그리는 라이브러리다. 
-                                    #matplotlib.pyplot은 MATLAB과 비슷하게 명령어를 지정할 수 있다고 한다.
-import torch                        #pyTorch
-import torch.nn as nn               #NEURAL NETWORKS 파이토치의 신경망
+import numpy as np                  
+import matplotlib.pyplot as plt                   
+import torch                        
+import torch.nn as nn               
 import torch.nn.functional as F
 from torch.utils.data import dataset     
 
-from torchvision import transforms, datasets    #데이터셋을 다운로드해주나? 좀 더 공부 필요
+from torchvision import transforms, datasets    
 
-'''2. 딥러닝 모델을 설계할 때 활용할 장비 확인'''
+
 
 if torch.cuda.is_available():
     DEVICE = torch.device('cuda')
@@ -18,52 +17,44 @@ else:
 
 print('Using PyTorch version: ', torch.__version__, 'Device: ',DEVICE)
 
-BATCH_SIZE = 32                     #보통 Hyper Parameter(사용자 지정 파라미터)는 대문자 표기  
-EPOCHS = 10                         #세대 1Epoch는 Feed Forward - Back Propagation 세트 
+BATCH_SIZE = 32                     
+EPOCHS = 10                         
 
 
-'''3. MNISET 데이터 다운로드(Train set, Test set 분리하기)'''
-train_dataset = datasets.MNIST(root = "../data/MNISET", # MNIST 손글씨 데이터셋   root: 데이터가 저장될 장소를 지정 ../는 상위폴더 코드실행 디렉터리 상위에 data볼더 내 MNIST폴더에 저장
-                               train = True,            #학습용 데이터인지 학습용이 아닌지 (검증용 데이터인지)         
-                               download = True,         #인터넷상에서 다운로드 할것인가?
-                               transform = transforms.ToTensor()) # 이미지 파일에대한 기본적 전처리 동시진행 여기서는 tensor로 (0,1)로 정규화까지 동시진행
+'''3. '''
+train_dataset = datasets.MNIST(root = "MNIST_data/", 
+                               train = True,            
+                               download = True,         
+                               transform = transforms.ToTensor()) 
 
-test_dataset =  datasets.MNIST(root = "../data/MNISET", 
+test_dataset =  datasets.MNIST(root = "MNIST_data/", 
                                train = False,
                                transform = transforms.ToTensor())
 
-train_loader = torch.utils.data.DataLoader(dataset = train_dataset, #MINI_Batch 단위로 할당 하고자 하는 데이터 셋을 지정합니다.
+train_loader = torch.utils.data.DataLoader(dataset = train_dataset, 
                                            batch_size = BATCH_SIZE,
-                                           shuffle = True)          #데이터의 순서를 섞고자 할 때 이용한다. MLP모델이 순서를 기억해 학습할 수 있기에 그것을 막기 위한 조치이다.
+                                           shuffle = True)          
 
 test_loader = torch.utils.data.DataLoader(dataset = train_dataset,
                                            batch_size = BATCH_SIZE,
                                            shuffle = False)
 
 
-'''4. 데이터 확인하기 (1)'''
 for (X_train, Y_train) in train_loader:
     print('X_train', X_train.size(),'type: ', X_train.type())
     print('Y_train', Y_train.size(),'type: ', Y_train.type())
     break
-#X_train: torch.size([32,1,28,28]) type: torch.FloatTensor
-#Y_train: torch.size([32]) type: torch.LongTensor
 
-# 32개 이미지데이터가 1개의MINI_Batch를 구성하고 가로 28 새로 28개의 픽셀로 구성돼 있으며 채널이 1이므로 흑백 이미지
-# 32개의 이미지 데이터 각각에 label값이 1개씩 존재하기 떄문에 32개의 값을 갖고 있다는것을 확인할 수 있습니다. 
-
-'''5. 데이터 확인하기 (2)'''
 
 pltsize = 1
 plt.figure(figsize = (10 * pltsize , pltsize))
 for i in range(10):
     plt.subplot(1,10,i+1)
     plt.axis('off')
-    plt.imshow(X_train[i,:,:,:].numpy().reshape(28,28)), cmap = "gray_r" )
+    plt.imshow(X_train[i,:,:,:].numpy().reshape(28,28), cmap = "gray_r" )
     plt.title('Class: '+ str(Y_train[i].item()))
 
 
-'''6. MLP(Multi Layer Perceptron) 모델 설계하기'''
 
 class Net (nn.Module):
     def __init__(self):
@@ -74,21 +65,19 @@ class Net (nn.Module):
     def forward(self,x):
         x = x.view(-1 , 28 * 28)
         x = self.fc1(x)
-        x = F.sigmoid()
+        x = F.sigmoid(x)
         x = self.fc2(x)
-        x = F.sigmoid()
+        x = F.sigmoid(x)
         x = self.fc3(x)
-        x = F.log_softmax(x, dim =1)
+        x = F.log_softmax(x, dim = 1)
         return x
 
-''' 7. Optimizer, Objective Function 설정하기'''
 model = Net().to(DEVICE)
 optimizer = torch.optim.SGD(model.parameters(), lr = 0.01, momentum = 0.5)
-criterion = nn.CrossEntroptyLoss()
+criterion = nn.CrossEntropyLoss()
 
 print (model)
 
-''' 8. MLP 모델 학습을 진행하며 학습 데이터에 대한 모델 성능을 확인하는 함수 정의'''
 
 def train(model ,train_loader, optimizer, log_interval):
     model.train()
@@ -108,7 +97,6 @@ def train(model ,train_loader, optimizer, log_interval):
                loss.item()))
 
 
-''' 9. 학습되는 과정 속에서 검증 데이터에 대한 모델 성능을 확인하는 함수 정의 '''
 def evaluate(model, test_loader):
     model.eval()
     test_loss = 0
@@ -127,7 +115,6 @@ def evaluate(model, test_loader):
     test_accuracy = 100. * correct / len(test_loader.dataset)
     return test_loss,test_accuracy
 
-''' 10. MLP 학습을 실행하며 Train, Test set의 Loss 및 Test set Accuracy확인하기 '''
 for Epoch in range(1,EPOCHS + 1):
     train(model, train_loader, optimizer , log_interval = 200)
     test_loss, test_accuracy  = evaluate(model, test_loader)
